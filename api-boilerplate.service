@@ -1,0 +1,12 @@
+[Service]
+ExecStart=/path/to/api-boilerplate
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=api-boilerplate
+User=root
+Group=root
+Environment=GIN_MODE=release
+
+[Install]
+WantedBy=multi-user.target
