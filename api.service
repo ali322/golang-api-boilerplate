@@ -1,9 +1,9 @@
 [Service]
-ExecStart=/path/to/api-boilerplate
+ExecStart=/path/to/api
 Restart=always
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=api-boilerplate
+SyslogIdentifier=api
 User=root
 Group=root
 Environment=GIN_MODE=release

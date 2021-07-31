@@ -1,7 +1,7 @@
 package model
 
 import (
-	"api-boilerplate/dao"
+	"api/dao"
 )
 
 type User struct {

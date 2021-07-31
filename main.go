@@ -1,8 +1,8 @@
 package main
 
 import (
-	"api-boilerplate/api"
-	"api-boilerplate/middleware"
+	"api/api"
+	"api/middleware"
 	"fmt"
 	"log"
 	"os"

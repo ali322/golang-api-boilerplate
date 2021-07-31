@@ -1,7 +1,7 @@
 package api
 
 import (
-	v1 "api-boilerplate/api/v1"
+	v1 "api/api/v1"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
