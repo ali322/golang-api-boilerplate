@@ -1,3 +1,3 @@
-# api-boilerplate
+# api-app
 
-api-boilerplate service
+api-app service

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"api/api"
-	"api/middleware"
+	"app/api"
+	"app/middleware"
+	"app/model"
 	"fmt"
 	"log"
 	"os"
@@ -44,6 +45,7 @@ func main() {
 	// app.Use(middleware.JWT(map[string]string{
 	// 	"auth": "post|get",
 	// }))
+	model.InitDB(env)
 	api.ApplyRoutes(app)
 	port := env["APP_PORT"]
 	err = app.Run(fmt.Sprintf(":%s", port))

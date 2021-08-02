@@ -14,5 +14,6 @@ func ApplyRoutes(r *gin.RouterGroup) {
 				"code": 0, "message": "pong",
 			})
 		})
+		v1.POST("register", register)
 	}
 }
