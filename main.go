@@ -4,6 +4,7 @@ import (
 	"app/api"
 	"app/middleware"
 	"app/model"
+	"app/util"
 	"fmt"
 	"log"
 	"os"
@@ -42,13 +43,16 @@ func main() {
 	app.Use(middleware.Recovery())
 	app.Use(middleware.Error())
 	app.Use(middleware.Env(env))
-	// app.Use(middleware.JWT(map[string]string{
-	// 	"auth": "post|get",
-	// }))
+	app.Use(middleware.JWT(map[string]string{
+		// "auth": "post|get",
+		"login":    "post",
+		"register": "post",
+	}))
+	util.InitTranslator(env["LOCALE"])
+	util.RegisterValidatorTranslations(env["LOCALE"])
 	model.InitDB(env)
 	api.ApplyRoutes(app)
-	port := env["APP_PORT"]
-	err = app.Run(fmt.Sprintf(":%s", port))
+	err = app.Run(fmt.Sprintf(":%s", env["APP_PORT"]))
 	if err != nil {
 		log.Fatal(err.Error())
 	}

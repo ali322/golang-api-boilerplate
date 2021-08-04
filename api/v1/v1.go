@@ -15,5 +15,10 @@ func ApplyRoutes(r *gin.RouterGroup) {
 			})
 		})
 		v1.POST("register", register)
+		v1.POST("login", login)
+		v1.POST("change/:id/password", changePassword)
+		v1.POST("reset/:id/password", resetPassword)
+		v1.GET("user", users)
+		v1.GET("user/:id", user)
 	}
 }

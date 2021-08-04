@@ -54,8 +54,8 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 			_ = c.Error(err)
 			return
 		}
-		if !matched {
-			_ = c.Error(errors.New("不匹配"))
+		if matched {
+			c.Next()
 			return
 		}
 		headerStr := c.Request.Header.Get("Authorization")
@@ -64,7 +64,7 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 			return
 		}
 		sp := strings.Split(headerStr, "Bearer ")
-		if len(sp) < 1 {
+		if len(sp) <= 1 {
 			_ = c.Error(errors.New("授权头信息不合法"))
 			return
 		}
