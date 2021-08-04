@@ -130,11 +130,12 @@ func changePassword(c *gin.Context) {
 		return
 	}
 	user.Password = string(hashedPassword)
-	if err := user.Save(); err != nil {
+	updated, err := user.Update(id)
+	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, util.Reply(user))
+	c.JSON(http.StatusOK, util.Reply(updated))
 }
 
 type resetPasswordRequest struct {
@@ -164,9 +165,10 @@ func resetPassword(c *gin.Context) {
 		return
 	}
 	user.Password = string(hashedPassword)
-	if err := user.Save(); err != nil {
+	updated, err := user.Update(id)
+	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	c.JSON(http.StatusOK, util.Reply(user))
+	c.JSON(http.StatusOK, util.Reply(updated))
 }

@@ -20,5 +20,7 @@ func ApplyRoutes(r *gin.RouterGroup) {
 		v1.POST("reset/:id/password", resetPassword)
 		v1.GET("user", users)
 		v1.GET("user/:id", user)
+		v1.PUT("user/:id", updateUser)
+		v1.DELETE("user/:id", deleteUser)
 	}
 }

@@ -11,20 +11,20 @@ import (
 type User struct {
 	ID            string    `gorm:"size:100;not_null;primary_key" json:"id"`
 	Username      string    `gorm:"size:100;unique_index;not_null"`
-	Password      string    `gorm:"size:200,not_null"`
+	Password      string    `gorm:"size:200,not_null" json:"-"`
 	Email         string    `gorm:"size:200"`
 	Avtar         string    `gorm:"type:text"`
 	Memo          string    `gorm:"type:text"`
 	LastLoginedAt time.Time `time_format:"2016-01-02 15:04:05" json:"last_logined_at"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-	DeletedAt     *time.Time `sql:"index"`
+	DeletedAt     gorm.DeletedAt
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) error {
 	id := uuid.NewV4().String()
-	tx.Statement.SetColumn("id", id)
-	tx.Statement.SetColumn("lastLoginedAt", time.Now())
+	tx.Statement.SetColumn("ID", id)
+	tx.Statement.SetColumn("LastLoginedAt", time.Now())
 	return nil
 }
 
@@ -35,12 +35,13 @@ func (user User) Create() (User, error) {
 	return user, nil
 }
 
-func (user User) Save() error {
-	return db.Save(&user).Error
-}
-
-func (user User) Update(fields map[string]interface{}) error {
-	return db.Model(&user).Updates(fields).Error
+func (user User) Update(id string) (User, error) {
+	var old User
+	if err := db.First(&old, "id = ?", id).Error; err != nil {
+		return old, err
+	}
+	err := db.Model(&old).Updates(&user).Error
+	return old, err
 }
 
 func UserExists(username string) (bool, User) {
@@ -50,12 +51,13 @@ func UserExists(username string) (bool, User) {
 	return !notFound, one
 }
 
-func DeleteUser(id string) error {
+func DeleteUser(id string) (User, error) {
 	var one User
-	if err := db.Find(&one, id).Error; err != nil {
-		return err
+	if err := db.Find(&one, "id = ?", id).Error; err != nil {
+		return one, err
 	}
-	return db.Delete(&one).Error
+	err := db.Delete(&one).Error
+	return one, err
 	// return db.Model(&one).Update(&User{IsDeleted: true}).Error
 }
 
@@ -83,7 +85,7 @@ func FindUsers(options map[string]interface{}) ([]User, error) {
 
 func FindUser(id string, options map[string]interface{}) (User, error) {
 	var one User
-	if err := db.Scopes(applyQueryOptions(options)).Find(&one, "id = ?", id).Error; err != nil {
+	if err := db.Scopes(applyQueryOptions(options)).First(&one, "id = ?", id).Error; err != nil {
 		return one, err
 	}
 	return one, nil

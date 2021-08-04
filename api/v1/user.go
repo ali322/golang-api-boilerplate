@@ -10,15 +10,15 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type usersRequest struct {
+type usersQuery struct {
 	Key   string `form:"key" binding:"max=10"`
 	Page  int    `form:"page,default=1" binding:"min=1" json:"page"`
 	Limit int    `form:"limit,default=10" binding:"min=1" json:"limit"`
 }
 
 func users(c *gin.Context) {
-	var request usersRequest
-	if err := c.ShouldBind(&request); err != nil {
+	var query usersQuery
+	if err := c.ShouldBind(&query); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
 			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
@@ -29,14 +29,14 @@ func users(c *gin.Context) {
 		}
 	}
 	where := make([][]interface{}, 0)
-	if request.Key != "" {
-		where = append(where, []interface{}{"username LIKE ?", fmt.Sprintf("%%%s%%", request.Key)})
+	if query.Key != "" {
+		where = append(where, []interface{}{"username LIKE ?", fmt.Sprintf("%%%s%%", query.Key)})
 	}
 	users, count, err := model.FindAndCountUsers(map[string]interface{}{
 		"where": where,
 		// "preload": []string{"Role"},
-		"offset": (request.Page - 1) * request.Limit,
-		"limit":  request.Limit,
+		"offset": (query.Page - 1) * query.Limit,
+		"limit":  query.Limit,
 	})
 	if err != nil {
 		_ = c.Error(err)
@@ -56,4 +56,42 @@ func user(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, util.Reply(user))
+}
+
+type updateUserBody struct {
+	Email  string `binding:"omitempty,lt=200,email"`
+	Avatar string `binding:"omitempty,url"`
+	Memo   string `binding:"omitempty"`
+}
+
+func updateUser(c *gin.Context) {
+	id := c.Param("id")
+	var body updateUserBody
+	if err := c.ShouldBind(&body); err != nil {
+		errs, ok := err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
+	}
+	user := &model.User{Email: body.Email, Avtar: body.Avatar, Memo: body.Memo}
+	updated, err := user.Update(id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, util.Reply(updated))
+}
+
+func deleteUser(c *gin.Context) {
+	id := c.Param("id")
+	deleted, err := model.DeleteUser(id)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.JSON(http.StatusOK, util.Reply(deleted))
 }
