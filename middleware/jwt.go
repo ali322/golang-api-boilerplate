@@ -52,6 +52,7 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 		matched, err := matchRules(unless, c.Request.URL.String(), c.Request.Method)
 		if err != nil {
 			_ = c.Error(err)
+			c.Abort()
 			return
 		}
 		if matched {
@@ -61,11 +62,13 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 		headerStr := c.Request.Header.Get("Authorization")
 		if headerStr == "" {
 			_ = c.Error(errors.New("授权头信息为空"))
+			c.Abort()
 			return
 		}
 		sp := strings.Split(headerStr, "Bearer ")
 		if len(sp) <= 1 {
 			_ = c.Error(errors.New("授权头信息不合法"))
+			c.Abort()
 			return
 		}
 		tokenStr := sp[1]
@@ -74,6 +77,7 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 		token, err := decodeToken(tokenStr, jwtSecret)
 		if err != nil {
 			_ = c.Error(err)
+			c.Abort()
 			return
 		}
 		c.Set("user", token["user"])

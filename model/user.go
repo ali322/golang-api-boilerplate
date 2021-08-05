@@ -9,16 +9,16 @@ import (
 )
 
 type User struct {
-	ID            string    `gorm:"size:100;not_null;primary_key" json:"id"`
-	Username      string    `gorm:"size:100;unique_index;not_null"`
-	Password      string    `gorm:"size:200,not_null" json:"-"`
-	Email         string    `gorm:"size:200"`
-	Avtar         string    `gorm:"type:text"`
-	Memo          string    `gorm:"type:text"`
-	LastLoginedAt time.Time `time_format:"2016-01-02 15:04:05" json:"last_logined_at"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	DeletedAt     gorm.DeletedAt
+	ID            string         `gorm:"size:100;not_null;primary_key" json:"id"`
+	Username      string         `gorm:"size:100;unique_index;not_null" json:"username"`
+	Password      string         `gorm:"size:200,not_null" json:"-"`
+	Email         string         `gorm:"size:200" json:"email"`
+	Avtar         string         `gorm:"type:text" json:"avatar"`
+	Memo          string         `gorm:"type:text" json:"memo"`
+	LastLoginedAt time.Time      `time_format:"2016-01-02 15:04:05" json:"last_logined_at"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `json:"deleted_at"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) error {

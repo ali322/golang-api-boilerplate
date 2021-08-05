@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func generateJWTToken(secret string, user model.User) (string, error) {
@@ -133,11 +134,16 @@ func changePassword(c *gin.Context) {
 	id := me["id"].(string)
 	user, err := model.FindUser(id, nil)
 	if err != nil {
-		_ = c.Error(err)
-		return
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_ = c.Error(errors.New("用户不存在"))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.OldPassword)); err != nil {
-		_ = c.Error(err)
+		_ = c.Error(errors.New("旧密码不正确"))
 		return
 	}
 	if body.NewPassword != body.RepeatPassword {
@@ -178,8 +184,13 @@ func resetPassword(c *gin.Context) {
 	id := c.Param("id")
 	user, err := model.FindUser(id, nil)
 	if err != nil {
-		_ = c.Error(err)
-		return
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			_ = c.Error(errors.New("用户不存在"))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
 	if body.NewPassword != body.RepeatPassword {
 		_ = c.Error(errors.New("重复密码不匹配"))

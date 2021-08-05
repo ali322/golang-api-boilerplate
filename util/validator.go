@@ -12,8 +12,12 @@ import (
 )
 
 func TranslateValidatorErrors(err validator.ValidationErrors) map[string]string {
-	// errs := make(map[string]string)
-	return err.Translate(translator)
+	errs := make(map[string]string)
+	for f, err := range err.Translate(translator) {
+		stripedFieldName := f[strings.Index(f, ".")+1:]
+		errs[stripedFieldName] = err
+	}
+	return errs
 }
 
 // func registerValidatorTranslator(tag string, msg string) validator.RegisterTranslationsFunc {

@@ -11,9 +11,11 @@ import (
 )
 
 type usersQuery struct {
-	Key   string `form:"key" binding:"max=10"`
-	Page  int    `form:"page,default=1" binding:"min=1" json:"page"`
-	Limit int    `form:"limit,default=10" binding:"min=1" json:"limit"`
+	Key       string `form:"key" binding:"max=10"`
+	Page      int    `form:"page,default=1" binding:"min=1" json:"page"`
+	Limit     int    `form:"limit,default=10" binding:"min=1" json:"limit"`
+	SortBy    string `form:"sort_by,default=created_at"`
+	SortOrder string `form:"sort_order,default=desc"`
 }
 
 func users(c *gin.Context) {
@@ -37,6 +39,7 @@ func users(c *gin.Context) {
 		// "preload": []string{"Role"},
 		"offset": (query.Page - 1) * query.Limit,
 		"limit":  query.Limit,
+		"order":  fmt.Sprintf("%s %s", query.SortBy, query.SortOrder),
 	})
 	if err != nil {
 		_ = c.Error(err)
