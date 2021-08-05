@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,7 +22,7 @@ func generateJWTToken(secret string, user model.User) (string, error) {
 	return tokenStr, err
 }
 
-type registerRequest struct {
+type registerBody struct {
 	Username       string `binding:"required,lt=100"`
 	Password       string `binding:"required,lt=200"`
 	Repeatpassword string `binding:"required,lt=200,eqfield=Password" json:"repeat_password"`
@@ -29,25 +30,31 @@ type registerRequest struct {
 }
 
 func register(c *gin.Context) {
-	var request registerRequest
-	if err := c.ShouldBind(&request); err != nil {
-		_ = c.Error(err)
-		return
+	var body registerBody
+	if err := c.ShouldBind(&body); err != nil {
+		errs, ok := err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
-	exists, _ := model.UserExists(request.Username)
+	exists, _ := model.UserExists(body.Username)
 	if exists {
 		_ = c.Error(errors.New("用户已存在"))
 		return
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), 4)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 4)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 	user := model.User{
-		Username: request.Username,
+		Username: body.Username,
 		Password: string(hashedPassword),
-		Email:    request.Email,
+		Email:    body.Email,
 	}
 	created, err := user.Create()
 	if err != nil {
@@ -66,23 +73,29 @@ func register(c *gin.Context) {
 	}))
 }
 
-type loginRequest struct {
+type loginBody struct {
 	Username string `binding:"required,lt=100"`
 	Password string `binding:"required,lt=200"`
 }
 
 func login(c *gin.Context) {
-	var request loginRequest
-	if err := c.ShouldBind(&request); err != nil {
-		_ = c.Error(err)
-		return
+	var body loginBody
+	if err := c.ShouldBind(&body); err != nil {
+		errs, ok := err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
-	exists, found := model.UserExists(request.Username)
+	exists, found := model.UserExists(body.Username)
 	if !exists {
 		_ = c.Error(errors.New("用户不存在"))
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(found.Password), []byte(request.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(found.Password), []byte(body.Password)); err != nil {
 		_ = c.Error(errors.New("密码不正确"))
 		return
 	}
@@ -98,33 +111,40 @@ func login(c *gin.Context) {
 	}))
 }
 
-type changePasswordRequest struct {
-	OldPassword    string `binding:"required;lt=200"`
-	NewPassword    string `binding:"required;lt=200"`
-	RepeatPassword string `binding:"required;lt=200"`
+type changePasswordBody struct {
+	OldPassword    string `binding:"required,lt=100" json:"old_password"`
+	NewPassword    string `binding:"required,lt=200" json:"new_password"`
+	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
 }
 
 func changePassword(c *gin.Context) {
-	var request changePasswordRequest
-	if err := c.ShouldBind(&request); err != nil {
-		_ = c.Error(err)
-		return
+	var body changePasswordBody
+	if err := c.ShouldBind(&body); err != nil {
+		errs, ok := err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
-	id := c.Param("id")
+	me := c.GetStringMap("user")
+	id := me["id"].(string)
 	user, err := model.FindUser(id, nil)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.OldPassword)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.OldPassword)); err != nil {
 		_ = c.Error(err)
 		return
 	}
-	if request.NewPassword != request.RepeatPassword {
+	if body.NewPassword != body.RepeatPassword {
 		_ = c.Error(errors.New("重复密码不匹配"))
 		return
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), 4)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 4)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -138,16 +158,22 @@ func changePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, util.Reply(updated))
 }
 
-type resetPasswordRequest struct {
-	NewPassword    string `binding:"required;lt=200"`
-	RepeatPassword string `binding:"required;lt=200"`
+type resetPasswordBody struct {
+	NewPassword    string `binding:"required,lt=200" json:"new_password"`
+	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
 }
 
 func resetPassword(c *gin.Context) {
-	var request resetPasswordRequest
-	if err := c.ShouldBind(&request); err != nil {
-		_ = c.Error(err)
-		return
+	var body resetPasswordBody
+	if err := c.ShouldBind(&body); err != nil {
+		errs, ok := err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
+			return
+		} else {
+			_ = c.Error(err)
+			return
+		}
 	}
 	id := c.Param("id")
 	user, err := model.FindUser(id, nil)
@@ -155,11 +181,11 @@ func resetPassword(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	if request.NewPassword != request.RepeatPassword {
+	if body.NewPassword != body.RepeatPassword {
 		_ = c.Error(errors.New("重复密码不匹配"))
 		return
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.NewPassword), 4)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 4)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -171,4 +197,9 @@ func resetPassword(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, util.Reply(updated))
+}
+
+func me(c *gin.Context) {
+	me := c.GetStringMap("user")
+	c.JSON(http.StatusOK, util.Reply(me))
 }
