@@ -27,17 +27,7 @@ func pwd() (string, error) {
 	return path, nil
 }
 
-func main() {
-	var path string = ""
-	if os.Getenv("GIN_MODE") == "release" {
-		path, _ = pwd()
-	} else {
-		gin.SetMode(gin.DebugMode)
-	}
-	env, err := godotenv.Read(filepath.Join(path, ".env"))
-	if err != nil {
-		log.Fatal("failed to read .env")
-	}
+func setupApp(env map[string]string) *gin.Engine {
 	app := gin.New()
 	app.Use(gin.Logger())
 	app.Use(middleware.Recovery())
@@ -52,6 +42,21 @@ func main() {
 	util.RegisterValidatorTranslations(env["LOCALE"])
 	model.InitDB(env)
 	api.ApplyRoutes(app)
+	return app
+}
+
+func main() {
+	var path string = ""
+	if os.Getenv("GIN_MODE") == "release" {
+		path, _ = pwd()
+	} else {
+		gin.SetMode(gin.DebugMode)
+	}
+	env, err := godotenv.Read(filepath.Join(path, ".env"))
+	if err != nil {
+		log.Fatal("failed to read .env")
+	}
+	app := setupApp(env)
 	err = app.Run(fmt.Sprintf(":%s", env["APP_PORT"]))
 	if err != nil {
 		log.Fatal(err.Error())
