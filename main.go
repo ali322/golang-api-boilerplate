@@ -3,7 +3,7 @@ package main
 import (
 	"app/api"
 	"app/middleware"
-	"app/model"
+	"app/repository/dao"
 	"app/util"
 	"fmt"
 	"log"
@@ -40,7 +40,7 @@ func setupApp(env map[string]string) *gin.Engine {
 	}))
 	util.InitTranslator(env["LOCALE"])
 	util.RegisterValidatorTranslations(env["LOCALE"])
-	model.InitDB(env)
+	dao.Init(env)
 	api.ApplyRoutes(app)
 	return app
 }

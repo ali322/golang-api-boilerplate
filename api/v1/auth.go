@@ -1,37 +1,20 @@
 package v1
 
 import (
-	"app/model"
+	"app/repository/dao"
+	"app/repository/dto"
 	"app/util"
 	"errors"
 	"net/http"
-	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-func generateJWTToken(secret string, user model.User) (string, error) {
-	expired := time.Now().Add(time.Hour * 24 * 30).Unix()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user": user, "expire": expired,
-	})
-	tokenStr, err := token.SignedString([]byte(secret))
-	return tokenStr, err
-}
-
-type registerBody struct {
-	Username       string `binding:"required,lt=100"`
-	Password       string `binding:"required,lt=200"`
-	Repeatpassword string `binding:"required,lt=200,eqfield=Password" json:"repeat_password"`
-	Email          string `binding:"lt=200,email"`
-}
-
 func register(c *gin.Context) {
-	var body registerBody
+	var body dto.RegisterUser
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -42,7 +25,7 @@ func register(c *gin.Context) {
 			return
 		}
 	}
-	exists, _ := model.UserExists(body.Username)
+	exists, _ := dao.FindByUsername(body.Username)
 	if exists {
 		_ = c.Error(errors.New("用户已存在"))
 		return
@@ -52,7 +35,7 @@ func register(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	user := model.User{
+	user := dao.User{
 		Username: body.Username,
 		Password: string(hashedPassword),
 		Email:    body.Email,
@@ -64,7 +47,9 @@ func register(c *gin.Context) {
 	}
 	env := c.MustGet("env").(map[string]string)
 	jwtSecret := env["JWT_SECRET"]
-	token, err := generateJWTToken(jwtSecret, created)
+	token, err := util.GenerateToken(jwtSecret, map[string]interface{}{
+		"id": created.ID, "username": created.Username,
+	})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -74,13 +59,8 @@ func register(c *gin.Context) {
 	}))
 }
 
-type loginBody struct {
-	Username string `binding:"required,lt=100"`
-	Password string `binding:"required,lt=200"`
-}
-
 func login(c *gin.Context) {
-	var body loginBody
+	var body dto.LoginUser
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -91,7 +71,7 @@ func login(c *gin.Context) {
 			return
 		}
 	}
-	exists, found := model.UserExists(body.Username)
+	exists, found := dao.FindByUsernameOrEmail(body.UsernameOrEmail)
 	if !exists {
 		_ = c.Error(errors.New("用户不存在"))
 		return
@@ -102,7 +82,9 @@ func login(c *gin.Context) {
 	}
 	env := c.MustGet("env").(map[string]string)
 	jwtSecret := env["JWT_SECRET"]
-	token, err := generateJWTToken(jwtSecret, found)
+	token, err := util.GenerateToken(jwtSecret, map[string]interface{}{
+		"id": found.ID, "username": found.Username,
+	})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -112,14 +94,8 @@ func login(c *gin.Context) {
 	}))
 }
 
-type changePasswordBody struct {
-	OldPassword    string `binding:"required,lt=100" json:"old_password"`
-	NewPassword    string `binding:"required,lt=200" json:"new_password"`
-	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
-}
-
 func changePassword(c *gin.Context) {
-	var body changePasswordBody
+	var body dto.ChangePassword
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -130,9 +106,9 @@ func changePassword(c *gin.Context) {
 			return
 		}
 	}
-	me := c.GetStringMap("user")
-	id := me["id"].(string)
-	user, err := model.FindUser(id, nil)
+	auth := c.GetStringMap("auth")
+	id := auth["id"].(string)
+	user, err := dao.FindUser(id, nil)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(errors.New("用户不存在"))
@@ -164,13 +140,8 @@ func changePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, util.Reply(updated))
 }
 
-type resetPasswordBody struct {
-	NewPassword    string `binding:"required,lt=200" json:"new_password"`
-	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
-}
-
 func resetPassword(c *gin.Context) {
-	var body resetPasswordBody
+	var body dto.ChangePassword
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -182,7 +153,7 @@ func resetPassword(c *gin.Context) {
 		}
 	}
 	id := c.Param("id")
-	user, err := model.FindUser(id, nil)
+	user, err := dao.FindUser(id, nil)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			_ = c.Error(errors.New("用户不存在"))
@@ -211,6 +182,6 @@ func resetPassword(c *gin.Context) {
 }
 
 func me(c *gin.Context) {
-	me := c.GetStringMap("user")
-	c.JSON(http.StatusOK, util.Reply(me))
+	auth := c.GetStringMap("auth")
+	c.JSON(http.StatusOK, util.Reply(auth))
 }

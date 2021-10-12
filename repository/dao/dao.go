@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"log"
@@ -10,7 +10,7 @@ import (
 
 var db *gorm.DB
 
-func InitDB(env map[string]string) {
+func Init(env map[string]string) {
 	dsn := env["DATABASE_URL"]
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{

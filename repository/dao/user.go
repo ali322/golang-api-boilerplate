@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"errors"
@@ -44,9 +44,16 @@ func (user User) Update(id string) (User, error) {
 	return old, err
 }
 
-func UserExists(username string) (bool, User) {
+func FindByUsername(username string) (bool, User) {
 	var one User
 	err := db.Where("username = ?", username).First(&one).Error
+	notFound := errors.Is(err, gorm.ErrRecordNotFound)
+	return !notFound, one
+}
+
+func FindByUsernameOrEmail(usernameOrEmail string) (bool, User) {
+	var one User
+	err := db.Where("username = ?", usernameOrEmail).Or("email = ?", usernameOrEmail).First(&one).Error
 	notFound := errors.Is(err, gorm.ErrRecordNotFound)
 	return !notFound, one
 }

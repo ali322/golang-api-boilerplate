@@ -1,7 +1,8 @@
 package v1
 
 import (
-	"app/model"
+	"app/repository/dao"
+	"app/repository/dto"
 	"app/util"
 	"fmt"
 	"net/http"
@@ -10,16 +11,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type usersQuery struct {
-	Key       string `form:"key" binding:"max=10"`
-	Page      int    `form:"page,default=1" binding:"min=1" json:"page"`
-	Limit     int    `form:"limit,default=10" binding:"min=1" json:"limit"`
-	SortBy    string `form:"sort_by,default=created_at"`
-	SortOrder string `form:"sort_order,default=desc"`
-}
-
 func users(c *gin.Context) {
-	var query usersQuery
+	var query dto.QueryUser
 	if err := c.ShouldBind(&query); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -34,7 +27,7 @@ func users(c *gin.Context) {
 	if query.Key != "" {
 		where = append(where, []interface{}{"username LIKE ?", fmt.Sprintf("%%%s%%", query.Key)})
 	}
-	users, count, err := model.FindAndCountUsers(map[string]interface{}{
+	users, count, err := dao.FindAndCountUsers(map[string]interface{}{
 		"where": where,
 		// "preload": []string{"Role"},
 		"offset": (query.Page - 1) * query.Limit,
@@ -53,7 +46,7 @@ func users(c *gin.Context) {
 
 func user(c *gin.Context) {
 	id := c.Param("id")
-	user, err := model.FindUser(id, map[string]interface{}{})
+	user, err := dao.FindUser(id, map[string]interface{}{})
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -61,15 +54,9 @@ func user(c *gin.Context) {
 	c.JSON(http.StatusOK, util.Reply(user))
 }
 
-type updateUserBody struct {
-	Email  string `binding:"omitempty,lt=200,email"`
-	Avatar string `binding:"omitempty,url"`
-	Memo   string `binding:"omitempty"`
-}
-
 func updateUser(c *gin.Context) {
 	id := c.Param("id")
-	var body updateUserBody
+	var body dto.UpdateUser
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -80,7 +67,7 @@ func updateUser(c *gin.Context) {
 			return
 		}
 	}
-	user := &model.User{Email: body.Email, Avtar: body.Avatar, Memo: body.Memo}
+	user := &dao.User{Email: body.Email, Avtar: body.Avatar, Memo: body.Memo}
 	updated, err := user.Update(id)
 	if err != nil {
 		_ = c.Error(err)
@@ -91,7 +78,7 @@ func updateUser(c *gin.Context) {
 
 func deleteUser(c *gin.Context) {
 	id := c.Param("id")
-	deleted, err := model.DeleteUser(id)
+	deleted, err := dao.DeleteUser(id)
 	if err != nil {
 		_ = c.Error(err)
 		return

@@ -1,12 +1,11 @@
 package middleware
 
 import (
+	"app/util"
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,21 +29,6 @@ func matchRules(rules map[string]string, target string, method string) (bool, er
 		}
 	}
 	return false, nil
-}
-func decodeToken(tokenStr string, secret string) (map[string]interface{}, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-		return []byte(secret), nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	if !token.Valid {
-		return nil, errors.New("invalid token")
-	}
-	return token.Claims.(jwt.MapClaims), nil
 }
 
 func JWT(unless map[string]string) gin.HandlerFunc {
@@ -74,13 +58,13 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 		tokenStr := sp[1]
 		env := c.MustGet("env").(map[string]string)
 		jwtSecret := env["JWT_SECRET"]
-		token, err := decodeToken(tokenStr, jwtSecret)
+		token, err := util.DecodeToken(tokenStr, jwtSecret)
 		if err != nil {
 			_ = c.Error(err)
 			c.Abort()
 			return
 		}
-		c.Set("user", token["user"])
+		c.Set("auth", token["auth"])
 		c.Next()
 	}
 }
