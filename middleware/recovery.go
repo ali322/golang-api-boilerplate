@@ -12,7 +12,7 @@ func Recovery() gin.HandlerFunc {
 			if err := recover(); err != nil {
 				print(err)
 				c.JSON(http.StatusOK, &gin.H{
-					"code": -3, "message": err,
+					"code": -1, "message": err,
 				})
 			}
 		}()

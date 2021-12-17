@@ -16,7 +16,7 @@ func Error() gin.HandlerFunc {
 		err := errs.Last()
 		// errs, ok := err.(validator.ValidationErrors)
 		c.JSON(http.StatusOK, &gin.H{
-			"code": -1, "message": err.Error(),
+			"code": -2, "message": err.Error(),
 		})
 		c.Abort()
 	}
