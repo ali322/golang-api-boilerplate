@@ -4,7 +4,6 @@ import (
 	"app/repository/dao"
 	"app/repository/dto"
 	"app/util"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,17 +22,7 @@ func users(c *gin.Context) {
 			return
 		}
 	}
-	where := make([][]interface{}, 0)
-	if query.Key != "" {
-		where = append(where, []interface{}{"username LIKE ?", fmt.Sprintf("%%%s%%", query.Key)})
-	}
-	users, count, err := dao.FindAndCountUsers(map[string]interface{}{
-		"where": where,
-		// "preload": []string{"Role"},
-		"offset": (query.Page - 1) * query.Limit,
-		"limit":  query.Limit,
-		"order":  fmt.Sprintf("%s %s", query.SortBy, query.SortOrder),
-	})
+	users, count, err := query.Find()
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -67,8 +56,7 @@ func updateUser(c *gin.Context) {
 			return
 		}
 	}
-	user := &dao.User{Email: body.Email, Avtar: body.Avatar, Memo: body.Memo}
-	updated, err := user.Update(id)
+	updated, err := body.Save(id)
 	if err != nil {
 		_ = c.Error(err)
 		return

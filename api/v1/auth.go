@@ -9,8 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 func register(c *gin.Context) {
@@ -30,17 +28,7 @@ func register(c *gin.Context) {
 		_ = c.Error(errors.New("用户已存在"))
 		return
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 4)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	user := dao.User{
-		Username: body.Username,
-		Password: string(hashedPassword),
-		Email:    body.Email,
-	}
-	created, err := user.Create()
+	created, err := body.Create()
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -71,13 +59,9 @@ func login(c *gin.Context) {
 			return
 		}
 	}
-	exists, found := dao.FindByUsernameOrEmail(body.UsernameOrEmail)
-	if !exists {
-		_ = c.Error(errors.New("用户不存在"))
-		return
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(found.Password), []byte(body.Password)); err != nil {
-		_ = c.Error(errors.New("密码不正确"))
+	found, err := body.Login()
+	if err != nil {
+		_ = c.Error(err)
 		return
 	}
 	env := c.MustGet("env").(map[string]string)
@@ -108,31 +92,7 @@ func changePassword(c *gin.Context) {
 	}
 	auth := c.GetStringMap("auth")
 	id := auth["id"].(string)
-	user, err := dao.FindUser(id, nil)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_ = c.Error(errors.New("用户不存在"))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.OldPassword)); err != nil {
-		_ = c.Error(errors.New("旧密码不正确"))
-		return
-	}
-	if body.NewPassword != body.RepeatPassword {
-		_ = c.Error(errors.New("重复密码不匹配"))
-		return
-	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 4)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	user.Password = string(hashedPassword)
-	updated, err := user.Update(id)
+	updated, err := body.ChangePassword(id)
 	if err != nil {
 		_ = c.Error(err)
 		return
@@ -141,7 +101,7 @@ func changePassword(c *gin.Context) {
 }
 
 func resetPassword(c *gin.Context) {
-	var body dto.ChangePassword
+	var body dto.ResetPassword
 	if err := c.ShouldBind(&body); err != nil {
 		errs, ok := err.(validator.ValidationErrors)
 		if ok {
@@ -153,27 +113,7 @@ func resetPassword(c *gin.Context) {
 		}
 	}
 	id := c.Param("id")
-	user, err := dao.FindUser(id, nil)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_ = c.Error(errors.New("用户不存在"))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
-	}
-	if body.NewPassword != body.RepeatPassword {
-		_ = c.Error(errors.New("重复密码不匹配"))
-		return
-	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.NewPassword), 4)
-	if err != nil {
-		_ = c.Error(err)
-		return
-	}
-	user.Password = string(hashedPassword)
-	updated, err := user.Update(id)
+	updated, err := body.ResetPassword(id)
 	if err != nil {
 		_ = c.Error(err)
 		return
