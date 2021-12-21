@@ -36,7 +36,7 @@ type UpdateUser struct {
 	Email     string `binding:"omitempty,lt=200,email"`
 	Avatar    string `binding:"omitempty,url"`
 	Memo      string `binding:"omitempty"`
-	IsActived bool   `form:"default=true" binding:"-"`
+	IsActived bool   `binding:"omitempty" json:"is_actived"`
 }
 
 func (body *UpdateUser) Save(id string) (dao.User, error) {
@@ -58,6 +58,7 @@ func (body *UpdateUser) Save(id string) (dao.User, error) {
 	if body.Memo != "" {
 		values["memo"] = body.Memo
 	}
+	println("%v", body.IsActived)
 	values["is_actived"] = body.IsActived
 	return user.Update(values)
 }
