@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"app/lib/config"
 	"app/repository/dao"
 	"app/repository/dto"
 	"app/util"
@@ -8,20 +9,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 func register(c *gin.Context) {
 	var body dto.RegisterUser
 	if err := c.ShouldBind(&body); err != nil {
-		errs, ok := err.(validator.ValidationErrors)
-		if ok {
-			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
+		_ = c.Error(err)
+		return
 	}
 	exists, _ := dao.FindByUsername(body.Username)
 	if exists {
@@ -33,9 +27,7 @@ func register(c *gin.Context) {
 		_ = c.Error(err)
 		return
 	}
-	env := c.MustGet("env").(map[string]string)
-	jwtSecret := env["JWT_SECRET"]
-	token, err := util.GenerateToken(jwtSecret, map[string]interface{}{
+	token, err := util.GenerateToken(config.App.JWTSecret, map[string]interface{}{
 		"id": created.ID, "username": created.Username,
 	})
 	if err != nil {
@@ -50,23 +42,19 @@ func register(c *gin.Context) {
 func login(c *gin.Context) {
 	var body dto.LoginUser
 	if err := c.ShouldBind(&body); err != nil {
-		errs, ok := err.(validator.ValidationErrors)
-		if ok {
-			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
+		_ = c.Error(err)
+		return
 	}
 	found, err := body.Login()
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
-	env := c.MustGet("env").(map[string]string)
-	jwtSecret := env["JWT_SECRET"]
-	token, err := util.GenerateToken(jwtSecret, map[string]interface{}{
+	if !found.IsActived {
+		_ = c.Error(errors.New("用户未激活"))
+		return
+	}
+	token, err := util.GenerateToken(config.App.JWTSecret, map[string]interface{}{
 		"id": found.ID, "username": found.Username,
 	})
 	if err != nil {
@@ -81,14 +69,8 @@ func login(c *gin.Context) {
 func changePassword(c *gin.Context) {
 	var body dto.ChangePassword
 	if err := c.ShouldBind(&body); err != nil {
-		errs, ok := err.(validator.ValidationErrors)
-		if ok {
-			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
+		_ = c.Error(err)
+		return
 	}
 	auth := c.GetStringMap("auth")
 	id := auth["id"].(string)
@@ -103,14 +85,8 @@ func changePassword(c *gin.Context) {
 func resetPassword(c *gin.Context) {
 	var body dto.ResetPassword
 	if err := c.ShouldBind(&body); err != nil {
-		errs, ok := err.(validator.ValidationErrors)
-		if ok {
-			c.JSON(http.StatusOK, util.Reject(-2, util.TranslateValidatorErrors(errs)))
-			return
-		} else {
-			_ = c.Error(err)
-			return
-		}
+		_ = c.Error(err)
+		return
 	}
 	id := c.Param("id")
 	updated, err := body.ResetPassword(id)

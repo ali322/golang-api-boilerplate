@@ -2,63 +2,89 @@ package main
 
 import (
 	"app/api"
+	"app/lib/config"
+	"app/lib/logger"
+	"app/lib/ws"
 	"app/middleware"
 	"app/repository/dao"
 	"app/util"
+	"context"
 	"fmt"
 	"log"
-	"os"
-	"os/exec"
+	"net/http"
+	"os/signal"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
-func pwd() (string, error) {
-	file, err := exec.LookPath(os.Args[0])
-	if err != nil {
-		return "", err
-	}
-	path, err := filepath.Abs(file)
-	if err != nil {
-		return "", err
-	}
-	return path, nil
-}
-
-func setupApp(env map[string]string) *gin.Engine {
+func setupApp() *gin.Engine {
+	logger := logger.New(filepath.Join(config.App.LogDir, "app.log"))
+	defer logger.Sync()
 	app := gin.New()
-	app.Use(gin.Logger())
-	app.Use(middleware.Recovery())
+	app.Use(middleware.Logger(logger))
+	app.Use(middleware.Recovery(logger))
 	app.Use(middleware.Error())
-	app.Use(middleware.Env(env))
+	app.Use(middleware.Cors())
 	app.Use(middleware.JWT(map[string]string{
-		// "auth": "post|get",
-		"login":    "post",
-		"register": "post",
+		"public": "post|get",
 	}))
-	util.InitTranslator(env["LOCALE"])
-	util.RegisterValidatorTranslations(env["LOCALE"])
-	dao.Init(env)
+	util.InitTranslator(config.App.Locale)
+	util.RegisterValidatorTranslations(config.App.Locale)
+	go ws.WebsocketServer.Start()
+	dao.Init(config.Database.URL)
 	api.ApplyRoutes(app)
 	return app
 }
 
 func main() {
-	var path string = ""
-	if os.Getenv("GIN_MODE") == "release" {
-		path, _ = pwd()
-	} else {
-		gin.SetMode(gin.DebugMode)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	config.Read()
+	app := setupApp()
+
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%s", config.App.Port),
+		Handler: app,
 	}
-	env, err := godotenv.Read(filepath.Join(path, ".env"))
-	if err != nil {
-		log.Fatal("failed to read .env")
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("failed to listen: %s\n", err)
+		}
+	}()
+	// err := app.Run(fmt.Sprintf(":%s", config.App.Port))
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
+	<-ctx.Done()
+	stop()
+	log.Println("shutdown gracefully, press ctrl+c force shutdown")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := dao.Close(); err != nil {
+		log.Fatal("failed to close db: ", err)
 	}
-	app := setupApp(env)
-	err = app.Run(fmt.Sprintf(":%s", env["APP_PORT"]))
-	if err != nil {
-		log.Fatal(err.Error())
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatal("failed to shutdown server: ", err)
 	}
+	log.Println("server exiting")
+	// shutdown.NewHook().Close(
+	// 	func() {
+	// 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	// 		defer cancel()
+
+	// 		if err := server.Shutdown(ctx); err != nil {
+	// 			log.Fatal("failed to shutdown server: ", err)
+	// 		}
+	// 	},
+	// 	func() {
+	// 		if err := dao.Close(); err != nil {
+	// 			log.Fatal("failed to close db: ", err)
+	// 		}
+	// 	},
+	// )
 }

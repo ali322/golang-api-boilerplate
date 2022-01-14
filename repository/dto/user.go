@@ -4,6 +4,7 @@ import (
 	"app/repository/dao"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -14,8 +15,8 @@ type QueryUser struct {
 	Key       string `form:"key" binding:"max=10"`
 	Page      int    `form:"page,default=1" binding:"min=1" json:"page"`
 	Limit     int    `form:"limit,default=10" binding:"min=1" json:"limit"`
-	SortBy    string `form:"sort_by,default=created_at"`
-	SortOrder string `form:"sort_order,default=desc"`
+	SortBy    string `form:"sortBy,default=created_at"`
+	SortOrder string `form:"sortOrder,default=desc"`
 }
 
 func (query *QueryUser) Find() ([]dao.User, int64, error) {
@@ -48,18 +49,13 @@ func (body *UpdateUser) Save(id string) (dao.User, error) {
 			return user, err
 		}
 	}
-	values := make(map[string]interface{})
-	if body.Email != "" {
-		values["email"] = body.Email
+	values := map[string]interface{}{
+		"email":      body.Email,
+		"avatar":     body.Avatar,
+		"memo":       body.Memo,
+		"is_actived": body.IsActived,
 	}
-	if body.Avatar != "" {
-		values["avatar"] = body.Avatar
-	}
-	if body.Memo != "" {
-		values["memo"] = body.Memo
-	}
-	println("%v", body.IsActived)
-	values["is_actived"] = body.IsActived
+	values = omitEmpty(values)
 	return user.Update(values)
 }
 
@@ -74,12 +70,8 @@ func (body *RegisterUser) Create() (dao.User, error) {
 	user := dao.User{
 		Username: body.Username,
 		Email:    body.Email,
+		Password: body.Password,
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 4)
-	if err != nil {
-		return user, err
-	}
-	user.Password = string(hashedPassword)
 	return user.Create()
 }
 
@@ -93,16 +85,23 @@ func (body *LoginUser) Login() (dao.User, error) {
 	if !exists {
 		return found, errors.New("用户不存在")
 	}
+	if !found.IsActived {
+		return found, errors.New("用户未激活")
+	}
 	if err := bcrypt.CompareHashAndPassword([]byte(found.Password), []byte(body.Password)); err != nil {
 		return found, errors.New("密码不正确")
 	}
-	return found.Update(map[string]interface{}{"last_logined_at": time.Now()})
+	updated, err := found.Update(map[string]interface{}{"last_logined_at": time.Now()})
+	if err != nil {
+		return updated, err
+	}
+	return updated, nil
 }
 
 type ChangePassword struct {
-	OldPassword    string `binding:"required,lt=100" json:"old_password"`
-	NewPassword    string `binding:"required,lt=200" json:"new_password"`
-	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
+	OldPassword    string `binding:"required,lt=100" json:"oldPassword"`
+	NewPassword    string `binding:"required,lt=200" json:"newPassword"`
+	RepeatPassword string `binding:"required,lt=200" json:"repeatPassword"`
 }
 
 func (body *ChangePassword) ChangePassword(id string) (dao.User, error) {
@@ -128,8 +127,8 @@ func (body *ChangePassword) ChangePassword(id string) (dao.User, error) {
 }
 
 type ResetPassword struct {
-	NewPassword    string `binding:"required,lt=200" json:"new_password"`
-	RepeatPassword string `binding:"required,lt=200" json:"repeat_password"`
+	NewPassword    string `binding:"required,lt=200" json:"newPassword"`
+	RepeatPassword string `binding:"required,lt=200" json:"repeatPassword"`
 }
 
 func (body *ResetPassword) ResetPassword(id string) (dao.User, error) {
@@ -149,4 +148,22 @@ func (body *ResetPassword) ResetPassword(id string) (dao.User, error) {
 		return user, err
 	}
 	return user.Update(map[string]interface{}{"password": string(hashedPassword)})
+}
+
+type ToggleUserActive struct {
+	UserID string `binding:"required" json:"userID"`
+}
+
+func (body ToggleUserActive) Active() (err error) {
+	values := map[string]interface{}{
+		"is_actived": true,
+	}
+	return dao.UpdateUsers(values, strings.Split(body.UserID, ","))
+}
+
+func (body ToggleUserActive) Deactive() (err error) {
+	values := map[string]interface{}{
+		"is_actived": false,
+	}
+	return dao.UpdateUsers(values, strings.Split(body.UserID, ","))
 }

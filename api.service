@@ -1,12 +1,16 @@
+[Unit]
+Description=aid_kit service
+After=network.target
+
 [Service]
-ExecStart=/path/to/api
+Type=simple
 Restart=always
-StandardOutput=syslog
-StandardError=syslog
-SyslogIdentifier=api
+RestartSec=5
 User=root
 Group=root
-Environment=GIN_MODE=release
+WorkingDirectory=/data/3dppt/soft/aid-kit
+Environment="RUST_LOG=aid_kit"
+ExecStart=/data/3dppt/soft/aid-kit/aid_kit
 
 [Install]
 WantedBy=multi-user.target

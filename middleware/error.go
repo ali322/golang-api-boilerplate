@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"app/util"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 func Error() gin.HandlerFunc {
@@ -13,11 +15,17 @@ func Error() gin.HandlerFunc {
 		if len(errs) == 0 {
 			return
 		}
-		err := errs.Last()
-		// errs, ok := err.(validator.ValidationErrors)
-		c.JSON(http.StatusOK, &gin.H{
-			"code": -2, "message": err.Error(),
-		})
+		last := errs.Last()
+		err, ok := last.Err.(validator.ValidationErrors)
+		if ok {
+			c.JSON(http.StatusOK, &gin.H{
+				"code": -2, "msg": util.TranslateValidatorErrors(err),
+			})
+		} else {
+			c.JSON(http.StatusOK, &gin.H{
+				"code": -2, "msg": last.Error(),
+			})
+		}
 		c.Abort()
 	}
 }

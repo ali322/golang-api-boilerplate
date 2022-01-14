@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"app/lib/config"
 	"app/util"
 	"errors"
 	"regexp"
@@ -56,9 +57,7 @@ func JWT(unless map[string]string) gin.HandlerFunc {
 			return
 		}
 		tokenStr := sp[1]
-		env := c.MustGet("env").(map[string]string)
-		jwtSecret := env["JWT_SECRET"]
-		token, err := util.DecodeToken(tokenStr, jwtSecret)
+		token, err := util.DecodeToken(tokenStr, config.App.JWTSecret)
 		if err != nil {
 			_ = c.Error(err)
 			c.Abort()

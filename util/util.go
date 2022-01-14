@@ -12,6 +12,6 @@ func Reply(data interface{}) *gin.H {
 
 func Reject(code int, data interface{}) *gin.H {
 	return &gin.H{
-		"code": code, "message": data,
+		"code": code, "msg": data,
 	}
 }
