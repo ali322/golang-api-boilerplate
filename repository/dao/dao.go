@@ -20,9 +20,7 @@ func Init(dsn string) {
 		log.Fatal(err)
 	}
 	// db.Debug().Logger
-	// db.AutoMigrate(&User{}, &Role{}, &Action{}, &Group{}, &Industry{}, &JoinGroupApply{})
-	// db.AutoMigrate(&Asset{}, &AssetCategory{}, &AssetExtra{}, &AssetFolder{}, &AssetTag{}, &AssetFavorite{})
-	// db.AutoMigrate(&App{}, &AppCategory{}, &AppFolder{}, &AppTag{}, &AppFavorite{})
+	db.AutoMigrate(&User{}, &Post{}, &Category{})
 }
 
 func Close() error {
@@ -95,5 +93,15 @@ func applyQueryOptions(options map[string]interface{}) func(db *gorm.DB) *gorm.D
 			tx = tx.Limit(options["limit"].(int))
 		}
 		return tx
+	}
+}
+
+func initData() {
+	var category = Category{
+		Name: "根分类", Description: "根分类", Lft: 1, Rgt: 2, Depth: 0,
+	}
+	_, err := category.Create(nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 }

@@ -4,6 +4,6 @@ app:
   jwtSecret: n5LXiLeQ0UqaVwOSySIARzraSebDviRL1nLrNCWG1HM
   logDir: log
 database:
-  url: root:yaxinaid@tcp(localhost:3306)/todo?charset=charset=utf8mb4,utf8&parseTime=True&loc=Local
+  url: root:yaxinaid@tcp(localhost:3306)/foo?charset=charset=utf8mb4,utf8&parseTime=True&loc=Local
 
   

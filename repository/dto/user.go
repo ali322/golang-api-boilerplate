@@ -37,7 +37,7 @@ type UpdateUser struct {
 	Email     string `binding:"omitempty,lt=200,email"`
 	Avatar    string `binding:"omitempty,url"`
 	Memo      string `binding:"omitempty"`
-	IsActived bool   `binding:"omitempty" json:"is_actived"`
+	IsActived bool   `binding:"omitempty" json:"isActived"`
 }
 
 func (body *UpdateUser) Save(id string) (dao.User, error) {
@@ -62,7 +62,7 @@ func (body *UpdateUser) Save(id string) (dao.User, error) {
 type RegisterUser struct {
 	Username       string `binding:"required,lt=100"`
 	Password       string `binding:"required,lt=200"`
-	Repeatpassword string `binding:"required,lt=200,eqfield=Password" json:"repeat_password"`
+	Repeatpassword string `binding:"required,lt=200,eqfield=Password" json:"repeatPassword"`
 	Email          string `binding:"lt=200,email"`
 }
 
@@ -76,12 +76,12 @@ func (body *RegisterUser) Create() (dao.User, error) {
 }
 
 type LoginUser struct {
-	UsernameOrEmail string `binding:"required,lt=100" json:"username_or_email"`
-	Password        string `binding:"required,lt=200"`
+	Username string `binding:"required,lt=100" json:"username"`
+	Password string `binding:"required,lt=200"`
 }
 
 func (body *LoginUser) Login() (dao.User, error) {
-	exists, found := dao.FindByUsernameOrEmail(body.UsernameOrEmail)
+	exists, found := dao.FindByUsername(body.Username)
 	if !exists {
 		return found, errors.New("用户不存在")
 	}

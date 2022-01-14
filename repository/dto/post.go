@@ -18,7 +18,7 @@ type NewPost struct {
 func (body *NewPost) Create(userID string) (dao.Post, error) {
 	m := dao.Post{
 		Title: body.Title, Content: body.Content,
-		CategoryID: body.CategoryID,
+		CategoryID: body.CategoryID, UserID: userID,
 	}
 	if body.IsPublic != nil {
 		m.IsPublic = *body.IsPublic

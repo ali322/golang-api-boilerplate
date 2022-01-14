@@ -32,17 +32,17 @@ func ApplyRoutes(r *gin.RouterGroup) {
 
 		v1.POST("post", createPost)
 		v1.PUT("post/:id", updatePost)
-		r.GET("public/post/:id", post)
-		r.GET("public/post", middleware.Cache(), posts)
+		v1.GET("public/post/:id", post)
+		v1.GET("public/post", middleware.Cache(), posts)
 
-		v1.POST("app-folder", createCategory)
-		v1.PUT("app-folder/:id", updateCategory)
-		v1.GET("public/app-folder/:id", category)
-		v1.GET("public/app-folder", categories)
-		v1.DELETE("app-folder", deleteCategory)
-		v1.POST("app-folder/to/:id", moveCategory)
-		v1.POST("folder/app", addToCategory)
-		v1.DELETE("folder/app", removeFromCategory)
-		v1.PUT("folder/app", movePost)
+		v1.POST("category", createCategory)
+		v1.PUT("category/:id", updateCategory)
+		v1.GET("public/category/:id", category)
+		v1.GET("public/category", categories)
+		v1.DELETE("category", deleteCategory)
+		v1.POST("category/to/:id", moveCategory)
+		v1.POST("category/post", addToCategory)
+		v1.DELETE("category/post", removeFromCategory)
+		v1.PUT("category/post", movePost)
 	}
 }

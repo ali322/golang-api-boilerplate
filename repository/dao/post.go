@@ -15,7 +15,7 @@ type Post struct {
 	Liked      uint      `gorm:"default:0" binding:"-" json:"liked"`
 	IsPublic   bool      `gorm:"type:boolean;default:false" binding:"boolean" json:"isPublic"`
 	CategoryID uint      `json:"categoryID"`
-	Category   *Category `gorm:"foreignkey:categoryID" binding:"-" json:"category,omitempty"`
+	Category   *Category `gorm:"foreignkey:CategoryID" binding:"-" json:"category,omitempty"`
 	UserID     string    `json:"userID"`
 	User       *User     `binding:"-" json:"user,omitempty"`
 }

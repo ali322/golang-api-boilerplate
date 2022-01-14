@@ -19,7 +19,6 @@ type NewCategory struct {
 func (body *NewCategory) Create(userID string) (dao.Category, error) {
 	m := dao.Category{
 		Name: body.Name, Description: body.Description,
-		UserID: userID,
 	}
 	var parentID uint = 1
 	if body.ParentID != nil {

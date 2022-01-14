@@ -14,9 +14,7 @@ type Category struct {
 	Name          string         `gorm:"size:200;uniqueIndex;not null" json:"name"`
 	Description   string         `gorm:"type:text" json:"description"`
 	Amount        uint           `gorm:"default:0" binding:"-" json:"amount"`
-	Posts         []Post         `gorm:"foreignkey:categoryID" binding:"-" json:"posts"`
-	UserID        string         `json:"userID"`
-	User          *User          `gorm:"foreignkey:UserID" binding:"-" json:"user,omitempty"`
+	Posts         []Post         `gorm:"foreignkey:CategoryID" binding:"-" json:"posts"`
 	ParentID      sql.NullInt64  `nestedset:"parent_id" json:"-"`
 	Parent        *Category      `gorm:"foreignkey:ParentID" binding:"-" json:"parent"`
 	Rgt           int            `nestedset:"rgt" json:"left"`
