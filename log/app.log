@@ -103,3 +103,4 @@
 2022-01-14 15:59:42	INFO	middleware/logger.go:33	/api/v1/category/post	{"status": 200, "method": "PUT", "path": "/api/v1/category/post", "query": "", "ip": "::1", "userAgent": "Paw/3.3.0 (Macintosh; OS X/10.15.6) GCDHTTPRequest", "latency": 0.010755569, "finishedAt": "2022-01-14 15:59:42"}
 2022-01-14 15:59:45	INFO	middleware/logger.go:33	/api/v1/public/category/3	{"status": 200, "method": "GET", "path": "/api/v1/public/category/3", "query": "", "ip": "::1", "userAgent": "Paw/3.3.0 (Macintosh; OS X/10.15.6) GCDHTTPRequest", "latency": 0.002618173, "finishedAt": "2022-01-14 15:59:45"}
 2022-01-14 15:59:48	INFO	middleware/logger.go:33	/api/v1/public/category/2	{"status": 200, "method": "GET", "path": "/api/v1/public/category/2", "query": "", "ip": "::1", "userAgent": "Paw/3.3.0 (Macintosh; OS X/10.15.6) GCDHTTPRequest", "latency": 0.00387926, "finishedAt": "2022-01-14 15:59:48"}
+2022-01-17 10:50:09	ERROR	middleware/logger.go:20	用户不存在
