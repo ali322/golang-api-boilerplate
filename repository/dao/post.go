@@ -84,6 +84,8 @@ func FindAndCountPosts(options map[string]interface{}) ([]Post, int64, error) {
 	}
 	delete(options, "offset")
 	delete(options, "limit")
+	delete(options, "order")
+	delete(options, "join")
 	if err := db.Model(&Post{}).Scopes(applyQueryOptions(options)).Count(&count).Error; err != nil {
 		return rows, count, err
 	}
