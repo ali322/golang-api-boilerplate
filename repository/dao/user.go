@@ -92,7 +92,7 @@ func FindAndCountUsers(options map[string]interface{}) ([]User, int64, error) {
 	delete(options, "limit")
 	delete(options, "order")
 	delete(options, "join")
-	if err := db.Model(&User{}).Scopes(applyQueryOptions(options)).Count(&count).Error; err != nil {
+	if err := db.Model(&User{}).Scopes(applyQueryOptions(options)).Group("id").Count(&count).Error; err != nil {
 		return rows, count, err
 	}
 	return rows, count, nil

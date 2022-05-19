@@ -138,7 +138,7 @@ func FindAndCountCategories(options map[string]interface{}) ([]Category, int64, 
 	}
 	delete(options, "offset")
 	delete(options, "limit")
-	if err := db.Model(&Category{}).Where("parent_id IS NOT NULL").Scopes(applyQueryOptions(options)).Count(&count).Error; err != nil {
+	if err := db.Model(&Category{}).Where("parent_id IS NOT NULL").Scopes(applyQueryOptions(options)).Group("id").Count(&count).Error; err != nil {
 		return rows, count, err
 	}
 	return rows, count, nil

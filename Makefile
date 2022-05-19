@@ -9,6 +9,9 @@ GOARCH := "amd64"
 
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(Build)"
 
+mirror:
+	@go env -w GOPROXY=https://goproxy.cn,direct
+
 install:
 	@go get -u
 
@@ -16,4 +19,4 @@ build:
 	@echo ">  Building binary"
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(LDFLAGS) -o $(PROJECT) *.go
 
-.PHONY: install build
+.PHONY: install build mirror

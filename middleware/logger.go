@@ -1,13 +1,14 @@
 package middleware
 
 import (
+	"app/lib/logger"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-func Logger(logger *zap.Logger) gin.HandlerFunc {
+func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
@@ -17,7 +18,7 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 		latency := end.Sub(start)
 		if len(c.Errors) > 0 {
 			for _, e := range c.Errors.Errors() {
-				logger.Error(e)
+				logger.Logger.Error(e)
 			}
 		} else {
 			fields := []zap.Field{
@@ -30,7 +31,7 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 				zap.Duration("latency", latency),
 				zap.String("finishedAt", end.Format("2006-01-02 15:04:05")),
 			}
-			logger.Info(path, fields...)
+			logger.Logger.Info(path, fields...)
 		}
 	}
 }

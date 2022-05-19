@@ -13,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -21,11 +20,11 @@ import (
 )
 
 func setupApp() *gin.Engine {
-	logger := logger.New(filepath.Join(config.App.LogDir, "app.log"))
-	defer logger.Sync()
+	logger.Init(config.App.LogDir)
+	defer logger.Logger.Sync()
 	app := gin.New()
-	app.Use(middleware.Logger(logger))
-	app.Use(middleware.Recovery(logger))
+	app.Use(middleware.Logger())
+	app.Use(middleware.Recovery())
 	app.Use(middleware.Error())
 	app.Use(middleware.Cors())
 	app.Use(middleware.JWT(map[string]string{

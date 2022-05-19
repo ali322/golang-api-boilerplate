@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"app/lib/logger"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -12,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Recovery(logger *zap.Logger) gin.HandlerFunc {
+func Recovery() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -28,12 +29,12 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 				}
 				httpRequest, _ := httputil.DumpRequest(c.Request, false)
 				if brokenPipe {
-					logger.Error(c.Request.URL.Path, zap.Any("error", err))
+					logger.Logger.Error(c.Request.URL.Path, zap.Any("error", err))
 					c.Error(err.(error))
 					c.Abort()
 					return
 				}
-				logger.Error("[Recovery from panic]",
+				logger.Logger.Error("[Recovery from panic]",
 					zap.Time("time", time.Now()),
 					zap.Any("error", err),
 					zap.String("request", string(httpRequest)),
